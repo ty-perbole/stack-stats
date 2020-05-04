@@ -23,6 +23,7 @@ and other common Python data science packages.
 Available at
 - https://ty-perbole.github.io/stack-stats/index.html.
 - [01_BitcoinNetworkRatios](https://ty-perbole.github.io/stack-stats/01_BitcoinNetworkRatios.html)
+- [02_HODLWaves](https://ty-perbole.github.io/stack-stats/02_HODLWaves.html)
 
 If you don't want to install Jupyter and run the tutorials yourself you can view the tutorials as rendered HTML in your browser.
 You will not be able to run code in the HTML version but you will be able to see the visualizations and follow along.
