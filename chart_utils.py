@@ -43,6 +43,9 @@ def two_axis_chart(df, x_series, y1_series, y2_series, **kwargs):
         else:
             y1_series_title = y1_series[0]
 
+    if kwargs.get('y1_series_title'):
+        y1_series_title = kwargs.get('y1_series_title')
+
     for y1 in y1_series:
         # First trace
         fig.add_trace(
@@ -52,8 +55,9 @@ def two_axis_chart(df, x_series, y1_series, y2_series, **kwargs):
 
     # Second trace
     fig.add_trace(
-        go.Scatter(x=df[x_series], y=df[y2_series], name=y2_series),
-        secondary_y=True,
+        go.Scatter(x=df[x_series], y=df[y2_series], name=y2_series,
+                   line=dict(color='darkorange')),
+        secondary_y=True
     )
 
     # Add figure title
@@ -85,6 +89,18 @@ def two_axis_chart(df, x_series, y1_series, y2_series, **kwargs):
         fig.update_layout(
             shapes=highlight_shapes
         )
+
+    fig.update_layout(
+        annotations=[
+            dict(x=1, y=-0.1,
+                 text="Chart by: @typerbole; Data: {}".format(kwargs.get('data_source', 'CoinMetrics')),
+                 showarrow=False, xref='paper', yref='paper',
+                 xanchor='right', yanchor='auto', xshift=0, yshift=0)
+        ],
+        showlegend=True,
+        legend_orientation="h",
+
+    )
 
     # Set y-axes titles
     fig.update_yaxes(
@@ -297,10 +313,30 @@ def hodl_waves_chart(df, version='value'):
     fig.add_trace(go.Scatter(
         x=x, y=df['PriceUSD'],
         name='PriceUSD',
-        mode = 'lines',
-        line = dict(width=2, color='rgb(0, 0, 0)'),
+        mode='lines',
+        line=dict(width=2, color='rgb(0, 0, 0)'),
     ),
         secondary_y=True,
+    )
+
+    fig.add_trace(go.Scatter(
+        x=['2012-11-29', '2012-11-29'],
+        y=[0, 1000000],
+        mode="lines",
+        showlegend=False,
+        line=dict(width=2, color='black', dash="dot"),
+        ),
+        secondary_y=True
+    )
+
+    fig.add_trace(go.Scatter(
+        x=['2016-07-10', '2016-07-10'],
+        y=[0, 1000000],
+        mode="lines",
+        showlegend=False,
+        line=dict(width=2, color='black', dash="dot"),
+    ),
+        secondary_y=True
     )
 
     fig.update_yaxes(
@@ -312,6 +348,12 @@ def hodl_waves_chart(df, version='value'):
     # Add figure title
     fig.update_layout(
         title_text='Bitcoin HODL Waves: {} weighted'.format(version),
+        annotations=[
+            dict(x=1, y=-0.1,
+                 text="Chart by: @typerbole",
+                 showarrow=False, xref='paper', yref='paper',
+                 xanchor='right', yanchor='auto', xshift=0, yshift=0)
+        ],
     )
 
     # Set x-axis title
