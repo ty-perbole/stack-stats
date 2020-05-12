@@ -59,8 +59,6 @@ def two_axis_chart(df, x_series, y1_series, y2_series, **kwargs):
     # Add figure title
     fig.update_layout(
         title_text=kwargs.get('title', y1_series_title),
-        # paper_bgcolor='rgba(0,0,0,0)',
-        # plot_bgcolor='rgba(169,169,169,0.5)'
     )
 
     # Set x-axis title
@@ -90,12 +88,12 @@ def two_axis_chart(df, x_series, y1_series, y2_series, **kwargs):
 
     # Set y-axes titles
     fig.update_yaxes(
-        title_text=y1_series_title, secondary_y=False,
+        title_text=y1_series_title, secondary_y=False, tickformat=kwargs.get('y1_series_axis_format', None),
         type=kwargs.get('y1_series_axis_type', 'linear'), range=kwargs.get('y1_series_axis_range'),
         showgrid=False
     )
     fig.update_yaxes(
-        title_text=y2_series, secondary_y=True, tickformat="${n},",
+        title_text=y2_series, secondary_y=True, tickformat=kwargs.get('y2_series_axis_format', "${n},"),
         type=kwargs.get('y2_series_axis_type', 'linear'), range=kwargs.get('y2_series_axis_range'),
         showgrid=False
     )
@@ -147,3 +145,176 @@ def create_highlighted_region_shapes(date_regions, fillcolor='LightSalmon'):
             )
         )
     return shapes
+
+def hodl_waves_chart(df, version='value'):
+    """
+            Plot a two axis chart using Plotly library
+
+            Arguments:
+            df (dataframe): Pandas dataframe containing HODL waves dataframe from 02_HODLWaves.ipynb notebook
+            version: Can plot HODL waves by TXO value ('value), by total count of TXO ('count'),
+                     and by TXO with balance > 0.01 BTC ('count_filter')
+
+            Returns:
+                Plotly figure
+
+            """
+    x = df['date']
+    fig = make_subplots(
+        specs=[[{"secondary_y": True}]],
+    )
+
+    fig.add_trace(go.Scatter(
+        x=x, y=df['utxo_{}_under_1d'.format(version)],
+        mode='lines',
+        line=dict(width=0.5, color='rgb(0, 0, 0)'),
+        fillcolor='rgb(229.0, 89.0, 52.0)',
+        fill='tonexty',
+        name='<1d',
+        stackgroup='one',
+        groupnorm='percent'  # sets the normalization for the sum of the stackgroup
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=x, y=df['utxo_{}_1d_1w'.format(version)],
+        mode='lines',
+        line=dict(width=0.5, color='rgb(0, 0, 0)'),
+        fillcolor='rgb(228.8, 112.0, 52.6)',
+        fill='tonexty',
+        name='1d-1w',
+        stackgroup='one',
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=x, y=df['utxo_{}_1w_1m'.format(version)],
+        mode='lines',
+        line=dict(width=0.5, color='rgb(0, 0, 0)'),
+        fillcolor='rgb(228.6, 135.0, 53.2)',
+        fill='tonexty',
+        name='1w-1m',
+        stackgroup='one',
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=x, y=df['utxo_{}_1m_3m'.format(version)],
+        mode='lines',
+        line=dict(width=0.5, color='rgb(0, 0, 0)'),
+        fillcolor='rgb(228.4, 158.0, 53.8)',
+        fill='tonexty',
+        name='1m-3m',
+        stackgroup='one',
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=x, y=df['utxo_{}_3m_6m'.format(version)],
+        mode='lines',
+        line=dict(width=0.5, color='rgb(0, 0, 0)'),
+        fillcolor='rgb(228.2, 181.0, 54.4)',
+        fill='tonexty',
+        name='3m-6m',
+        stackgroup='one',
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=x, y=df['utxo_{}_6m_12m'.format(version)],
+        mode='lines',
+        line=dict(width=0.5, color='rgb(0, 0, 0)'),
+        fillcolor='rgb(228.0, 204.0, 55.0)',
+        fill='tonexty',
+        name='6m-12m',
+        stackgroup='one',
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=x, y=df['utxo_{}_12m_18m'.format(version)],
+        mode='lines',
+        line=dict(width=0.5, color='rgb(0, 0, 0)'),
+        fillcolor='rgb(182.4, 192.0, 82.2)',
+        fill='tonexty',
+        name='12m-18m',
+        stackgroup='one',
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=x, y=df['utxo_{}_18m_24m'.format(version)],
+        mode='lines',
+        line=dict(width=0.5, color='rgb(0, 0, 0)'),
+        fillcolor='rgb(136.8, 180.0, 109.4)',
+        fill='tonexty',
+        name='18m-2y',
+        stackgroup='one',
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=x, y=df['utxo_{}_2y_3y'.format(version)],
+        mode='lines',
+        line=dict(width=0.5, color='rgb(0, 0, 0)'),
+        fillcolor='rgb(91.2, 168.0, 136.6)',
+        fill='tonexty',
+        name='2y-3y',
+        stackgroup='one',
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=x, y=df['utxo_{}_3y_5y'.format(version)],
+        mode='lines',
+        line=dict(width=0.5, color='rgb(0, 0, 0)'),
+        fillcolor='rgb(45.6, 156.0, 163.8)',
+        fill='tonexty',
+        name='3y-5y',
+        stackgroup='one',
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=x, y=df['utxo_{}_5y_8y'.format(version)],
+        mode='lines',
+        line=dict(width=0.5, color='rgb(0, 0, 0)'),
+        fillcolor='rgb(0.0, 144.0, 191.0)',
+        fill='tonexty',
+        name='5y-8y',
+        stackgroup='one',
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=x, y=df['utxo_{}_greater_8y'.format(version)],
+        mode='lines',
+        line=dict(width=0.5, color='rgb(0, 0, 0)'),
+        fillcolor='rgb(0.0, 100.0, 130.0)',
+        fill='tonexty',
+        name='>8y',
+        stackgroup='one',
+    ))
+
+    fig.update_layout(
+        showlegend=True,
+        legend_orientation="h",
+        yaxis=dict(
+            type='linear',
+            range=[1, 100],
+            ticksuffix='%'))
+
+    # Second trace
+    fig.add_trace(go.Scatter(
+        x=x, y=df['PriceUSD'],
+        name='PriceUSD',
+        mode = 'lines',
+        line = dict(width=2, color='rgb(0, 0, 0)'),
+    ),
+        secondary_y=True,
+    )
+
+    fig.update_yaxes(
+        title_text='PriceUSD', secondary_y=True, tickformat="${n},",
+        type='log', range=[-2, 5],
+        showgrid=False
+    )
+
+    # Add figure title
+    fig.update_layout(
+        title_text='Bitcoin HODL Waves: {} weighted'.format(version),
+    )
+
+    # Set x-axis title
+    fig.update_xaxes(title_text='Date')
+
+    return fig.show()
