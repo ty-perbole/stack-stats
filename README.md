@@ -23,7 +23,7 @@ and other common Python data science packages.
 Available at
 - https://ty-perbole.github.io/stack-stats/index.html.
 - [01_BitcoinNetworkRatios](https://ty-perbole.github.io/stack-stats/01_BitcoinNetworkRatios.html)
-- [02_HODLWaves](https://ty-perbole.github.io/stack-stats/02_HODLWaves.html)
+- [02_HODLWavesPart1](https://ty-perbole.github.io/stack-stats/02_HODLWavesPart1.html)
 
 If you don't want to install Jupyter and run the tutorials yourself you can view the tutorials as rendered HTML in your browser.
 You will not be able to run code in the HTML version but you will be able to see the visualizations and follow along.
@@ -36,3 +36,7 @@ It's also worth noting that GitHub will not render the Plotly charts if you clic
               'uid': 'f6a…`
               
 So if you want to see the visualizations without running the notebook locally, use the HTML version.
+
+## Misc Work
+- [RealCap Weighted HODL Waves Chart](https://ty-perbole.github.io/stack-stats/RealCapHODLWaves.html)
+- [Bitcoin Security Margin Analysis](https://ty-perbole.github.io/stack-stats/SecurityMargin.html)
