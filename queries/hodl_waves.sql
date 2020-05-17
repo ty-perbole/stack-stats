@@ -31,17 +31,7 @@ input AS (
     transactions.inputs AS inputs
     ),
 
--- Now we can add the table we created and get the daily USD price of bitcoin
-cm AS (
-SELECT
-  date,
-  PriceUSD
-FROM
--- ** YOU WILL HAVE TO REPLACE THE PROJECT NAME HERE TO REFLECT YOUR OWN BIGQUERY TABLE **
-  `replace_this_project.bitcoin.cm_btc`),
-
 -- txo subquery: joins outputs to inputs so that we know when/if a TXO is spent.
--- NEW: we also join the price data and calculate the cost basis of each TXO
 txo AS (
   SELECT
     output.transaction_hash,
@@ -52,9 +42,7 @@ txo AS (
     input.spent_transaction_hash,
     input.destroyed_block_number,
     DATETIME(input.destroyed_block_ts) AS destroyed_block_ts,
-    output.output_value,
-    output.output_value * cm.PriceUSD / 100000000 AS output_cost_basis_usd,
-    cm.PriceUSD AS output_cost_basis_price
+    output.output_value
   FROM
     output
   -- Use Left Join, as not all outputs will be linked as inputs in future transactions if they remain unspent.
@@ -66,43 +54,28 @@ txo AS (
     output.transaction_hash = input.spent_transaction_hash
     -- Also make sure the output index matches within the transaction hash
     AND output.output_index = input.spent_output_index
-  -- Get the price data from our cm table with coinmetrics price data
-  LEFT JOIN
-    cm
-  ON
-  -- Join the price data onto the output creation block ts, to get the price at the time of output creation (cost basis)
-    DATE(output.created_block_ts) = cm.date
   ),
 
 -- blocks subquery: for each date get the final block for that date
--- NEW: we also join the price data so that we can see the price at each block
 blocks AS (
   SELECT
-    DATE(blocks.timestamp) AS date,
+    DATE(timestamp) AS date,
     -- Get last block per day
-    MAX(blocks.number) AS block_number,
-    MAX(DATETIME(blocks.timestamp)) AS block_ts,
-    cm.PriceUSD AS price_usd
+    MAX(number) AS block_number,
+    MAX(DATETIME(timestamp)) AS block_ts
   FROM
-    `bigquery-public-data.crypto_bitcoin.blocks` AS blocks
-  LEFT JOIN
-    cm
-  ON
-    cm.date = DATE(blocks.timestamp)
+    `bigquery-public-data.crypto_bitcoin.blocks`
   GROUP BY
-    date, price_usd)
+    date)
 
 -- final data aggregation query: join txo with blocks, keeping only txo
 -- that were created and unspent as of that block, then bucket the txo
 -- by age and sum the txo value per bucket per that day
--- NEW: Last grouping of SUM() columns, where we sum the output_cost_basis_usd column
---      from the txo table to get realized cap!
 SELECT
   -- Time series metadata
   blocks.date AS date,
   blocks.block_number AS block_number,
   blocks.block_ts AS block_ts,
-  blocks.price_usd AS price_usd,
 
 -- BTC Value Weighting
   -- Total UTXO value on that date
@@ -229,46 +202,7 @@ SELECT
          1, 0)) AS utxo_count_filter_5y_8y,
   SUM(IF(DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) >= 28 * 12 * 8
          AND txo.output_value / 100000000 >= 0.01,
-         1, 0)) AS utxo_count_filter_greater_8y,
-
--- BTC USD Value (Realized Cap) Weighting
-  -- Realized Cap on that date
-  SUM(txo.output_cost_basis_usd) AS realized_cap,
-  -- Our HODL Waves buckets, counting value of UTXO
-  SUM(IF(DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) < 1, txo.output_cost_basis_usd, 0)) AS utxo_realcap_under_1d,
-  SUM(IF(DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) >= 1
-         AND DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) < 7,
-         txo.output_cost_basis_usd, 0)) AS utxo_realcap_1d_1w,
-  SUM(IF(DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) >= 7
-         AND DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) < 28,
-         txo.output_cost_basis_usd, 0)) AS utxo_realcap_1w_1m,
-  SUM(IF(DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) >= 28
-         AND DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) < 28 * 3,
-         txo.output_cost_basis_usd, 0)) AS utxo_realcap_1m_3m,
-  SUM(IF(DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) >= 28 * 3
-         AND DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) < 28 * 6,
-         txo.output_cost_basis_usd, 0)) AS utxo_realcap_3m_6m,
-  SUM(IF(DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) >= 28 * 6
-         AND DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) < 28 * 12,
-         txo.output_cost_basis_usd, 0)) AS utxo_realcap_6m_12m,
-  SUM(IF(DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) >= 28 * 12
-         AND DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) < 28 * 18,
-         txo.output_cost_basis_usd, 0)) AS utxo_realcap_12m_18m,
-  SUM(IF(DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) >= 28 * 18
-         AND DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) < 28 * 24,
-         txo.output_cost_basis_usd, 0)) AS utxo_realcap_18m_24m,
-  SUM(IF(DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) >= 28 * 12 * 2
-         AND DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) < 28 * 12 * 3,
-         txo.output_cost_basis_usd, 0)) AS utxo_realcap_2y_3y,
-  SUM(IF(DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) >= 28 * 12 * 3
-         AND DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) < 28 * 12 * 5,
-         txo.output_cost_basis_usd, 0)) AS utxo_realcap_3y_5y,
-  SUM(IF(DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) >= 28 * 12 * 5
-         AND DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) < 28 * 12 * 8,
-         txo.output_cost_basis_usd, 0)) AS utxo_realcap_5y_8y,
-  SUM(IF(DATETIME_DIFF(blocks.block_ts, txo.created_block_ts, DAY) >= 28 * 12 * 8,
-         txo.output_cost_basis_usd, 0)) AS utxo_realcap_greater_8y
-
+         1, 0)) AS utxo_count_filter_greater_8y
 FROM
   blocks
 CROSS JOIN
@@ -283,6 +217,6 @@ WHERE
     -- Transactions that are never spent, so they are included
     OR txo.destroyed_block_number IS NULL)
 GROUP BY
-  date, block_number, block_ts, price_usd
+  date, block_number, block_ts
 ORDER BY
   date ASC;
