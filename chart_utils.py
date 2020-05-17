@@ -31,7 +31,7 @@ def two_axis_chart(df, x_series, y1_series, y2_series, **kwargs):
         """
     # Create figure with secondary y-axis
     fig = make_subplots(
-        specs=[[{"secondary_y": True}]],
+        specs=[[{"secondary_y": True}]]
     )
 
     if isinstance(y1_series, str):
@@ -56,7 +56,8 @@ def two_axis_chart(df, x_series, y1_series, y2_series, **kwargs):
     # Second trace
     fig.add_trace(
         go.Scatter(x=df[x_series], y=df[y2_series], name=y2_series,
-                   line=dict(color='darkorange')),
+                   line=dict(color='darkorange')
+                   ),
         secondary_y=True
     )
 
@@ -93,12 +94,13 @@ def two_axis_chart(df, x_series, y1_series, y2_series, **kwargs):
     fig.update_layout(
         annotations=[
             dict(x=1, y=-0.1,
-                 text="Chart by: @typerbole; Data: {}".format(kwargs.get('data_source', 'CoinMetrics')),
+                 text="Chart by: @typerbole; Data: {}".format(kwargs.get('data_source')) if kwargs.get('data_source') else "Chart by: @typerbole",
                  showarrow=False, xref='paper', yref='paper',
                  xanchor='right', yanchor='auto', xshift=0, yshift=0)
         ],
         showlegend=True,
         legend_orientation="h",
+        template="plotly_dark"
 
     )
 
