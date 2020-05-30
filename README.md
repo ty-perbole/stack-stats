@@ -25,6 +25,7 @@ Available at
 - [01_BitcoinNetworkRatios](https://ty-perbole.github.io/stack-stats/01_BitcoinNetworkRatios.html)
 - [02_HODLWavesPart1](https://ty-perbole.github.io/stack-stats/02_HODLWavesPart1.html)
 - [03_HODLWavesPart2RealizedCap](https://ty-perbole.github.io/stack-stats/03_HODLWavesPart2RealizedCap.html)
+- [04_BlockSpaceMarket](https://ty-perbole.github.io/stack-stats/04_BlockSpaceMarket.html)
 
 If you don't want to install Jupyter and run the tutorials yourself you can view the tutorials as rendered HTML in your browser.
 You will not be able to run code in the HTML version but you will be able to see the visualizations and follow along.

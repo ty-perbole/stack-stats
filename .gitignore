@@ -2,3 +2,6 @@
 *.ipynb_checkpoints/
 *-Copy*.ipynb*
 *__pycache__/
+*sandbox/
+*temp/
+btc.csv
