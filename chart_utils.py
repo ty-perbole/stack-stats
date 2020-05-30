@@ -1,7 +1,13 @@
 import datetime
+import numpy as np
 
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+
+import analysis_utils
 
 def two_axis_chart(df, x_series, y1_series, y2_series, **kwargs):
     """
@@ -10,7 +16,7 @@ def two_axis_chart(df, x_series, y1_series, y2_series, **kwargs):
         Arguments:
         df (dataframe): Pandas dataframe containing CoinMetrics community data
         x_series (string): Column name for x series, typically 'Date'
-        y1_series (string, list): C dolumn name, or list of column names, to plot on the left Y axis
+        y1_series (string, list): Column name, or list of column names, to plot on the left Y axis
         y2_series (string): Column name to plot on the right Y axis, typically 'PriceUSD'
 
         Keyword arguments:
@@ -113,6 +119,105 @@ def two_axis_chart(df, x_series, y1_series, y2_series, **kwargs):
     fig.update_yaxes(
         title_text=y2_series, secondary_y=True, tickformat=kwargs.get('y2_series_axis_format', "${n},"),
         type=kwargs.get('y2_series_axis_type', 'linear'), range=kwargs.get('y2_series_axis_range'),
+        showgrid=False
+    )
+
+    return fig.show()
+
+def single_axis_chart(df, x_series, y1_series, **kwargs):
+    """
+        Plot a two axis chart using Plotly library
+
+        Arguments:
+        df (dataframe): Pandas dataframe containing CoinMetrics community data
+        x_series (string): Column name for x series, typically 'Date'
+        y1_series (string, list): Column name, or list of column names, to plot on the left Y axis
+
+        Keyword arguments:
+        title (string): Title for the plot
+        x_axis_title (string): Title for X axis, defaults to string from x_series
+        y1_series_axis_type (string): Left Y axis type. Default is 'log'. Other sane option: 'linear'
+        y1_series_axis_range (list): Range for left Y axis. When axis type is log, range values represent powers of 10
+        y1_upper_thresh (float): Upper threshold for highlighting regions with extreme values for Y1 series
+        y1_lower_thresh (float): Lower threshold for highlighting regions with extreme values for Y1 series
+        thresh_inverse (bool): When true, high values of a ratio metric are highlighted green. When false, high values
+            indicate poor fundamentals and are highlighted red. Inverse logic for lower threshold.
+
+        Returns:
+            Plotly figure
+
+        """
+    # Create figure with secondary y-axis
+    fig = make_subplots(
+        specs=[[{"secondary_y": False}]]
+    )
+
+    if isinstance(y1_series, str):
+        y1_series_title = y1_series
+        y1_series = [y1_series]
+    elif isinstance(y1_series, list):
+        if "Roll" in y1_series[0]:
+            y1_series_title = y1_series[0][: y1_series[0].find("Roll")]
+        else:
+            y1_series_title = y1_series[0]
+
+    if kwargs.get('y1_series_title'):
+        y1_series_title = kwargs.get('y1_series_title')
+
+    for y1 in y1_series:
+        # First trace
+        fig.add_trace(
+            go.Scatter(x=df[x_series], y=df[y1], name=y1),
+            secondary_y=False
+        )
+
+    # Add figure title
+    fig.update_layout(
+        title_text=kwargs.get('title', y1_series_title),
+    )
+
+    # Set x-axis title
+    if kwargs.get('x_axis_title'):
+        fig.update_xaxes(title_text=kwargs.get('x_axis_title'))
+
+    if kwargs.get('y1_upper_thresh') or kwargs.get('y1_lower_thresh'):
+        highlight_shapes = []
+
+        if kwargs.get('y1_upper_thresh'):
+            highlight_shapes.extend(create_highlighted_region_shapes(
+                get_threshold_dates(df, x_series, y1_series[0], kwargs.get('y1_upper_thresh'), upper_bound=True),
+                fillcolor=('LightGreen' if kwargs.get('thresh_inverse', False) else 'LightSalmon')
+                )
+            )
+
+        if kwargs.get('y1_lower_thresh'):
+            highlight_shapes.extend(create_highlighted_region_shapes(
+                get_threshold_dates(df, x_series, y1_series[0], kwargs.get('y1_lower_thresh'), upper_bound=False),
+                fillcolor=('LightSalmon' if kwargs.get('thresh_inverse', False) else 'LightGreen')
+                )
+            )
+
+        fig.update_layout(
+            shapes=highlight_shapes
+        )
+
+    fig.update_layout(
+        annotations=[
+            dict(x=1, y=-0.1,
+                 text="Chart by: @typerbole; Data: {}".format(kwargs.get('data_source')) if kwargs.get('data_source') else "Chart by: @typerbole",
+                 showarrow=False, xref='paper', yref='paper',
+                 xanchor='right', yanchor='auto', xshift=0, yshift=0)
+        ],
+        showlegend=True,
+        legend_orientation="h",
+        template="plotly_dark"
+
+    )
+
+    # Set y-axes titles
+    fig.update_yaxes(
+        title_text=y1_series_title, secondary_y=False, tickformat=kwargs.get('y1_series_axis_format', None),
+        type=kwargs.get('y1_series_axis_type', 'linear'), range=kwargs.get('y1_series_axis_range'),
         showgrid=False
     )
 
@@ -362,3 +467,100 @@ def hodl_waves_chart(df, version='value'):
     fig.update_xaxes(title_text='Date')
 
     return fig.show()
+
+def colorFader(c1, c2, mix=0):
+    ''' Returns the midpoint between two colors '''
+    c1 = np.array(mpl.colors.to_rgb(c1))
+    c2 = np.array(mpl.colors.to_rgb(c2))
+    return mpl.colors.to_hex((1 - mix) * c1 + mix * c2)
+
+def block_space_price_heatmap(aggregate_data, date_series, price_data, type='sats', **kwargs):
+    """
+            Plot a block space price histogram
+
+            Arguments:
+                aggregate_data (dataframe): Pandas dataframe with bucket counts over some time aggregation
+                date_series (list): List of dates to plot
+                price_data (dataframe): Pandas dataframe with mean prices and TX volume over the same time aggregation
+                    as aggregate)data
+                type (str): Fee type: 'sats' or 'usd'
+
+            Returns:
+                Matplotlib histogram plot
+
+            """
+    if type == 'sats':
+        bins = analysis_utils.SATS_FEE_BINS
+        volume = 'transaction_volume_btc'
+    elif type == 'usd':
+        bins = analysis_utils.USD_FEE_BINS
+        volume = 'transaction_volume_usd'
+    heatmap_data = np.zeros((len(bins), len(date_series)))
+    bins_reversed = [x for x in reversed(bins)]
+    for month_index, month_name in enumerate(date_series):
+        for bin_index, bin_name in enumerate(bins_reversed):
+            heatmap_data[bin_index, month_index] = aggregate_data['tx_count'].get(month_name, {}).get(bin_name, 0)
+
+    fig = plt.figure(
+        figsize=[12, 6],
+        clear=True,
+        tight_layout=True
+    )
+    plt.style.use('dark_background')
+
+    ax = plt.imshow(
+        heatmap_data / heatmap_data.sum(axis=0),
+        cmap='hot',
+        interpolation=None, aspect='auto',
+    ).axes
+
+    ax.set_xticks([y for y, x in enumerate(date_series) if "January" in x])
+    ax.set_xticklabels([x[-4:] for y, x in enumerate(date_series) if "January" in x])
+    ax.set_yticks([y for y, x in enumerate(bins_reversed)])
+    ax.set_yticklabels(bins_reversed)
+
+    ax.set_ylabel(
+        "Fee Rate (Sats/vByte)" if type == 'sats' else "Fee Rate (USD/vByte)",
+        fontsize=18)
+    ax.set_xlabel("Date", fontsize=18)
+    ax.set_title("Bitcoin Block Space Price Distribution Over Time", fontsize=26)
+
+    ax.text(
+        1, -0.1,
+        "Chart by: @typerbole",
+        transform=ax.transAxes,
+        horizontalalignment='center',
+        verticalalignment='center', fontsize=16
+    )
+    if kwargs.get('data_source'):
+        ax.text(
+            0, -0.1,
+            "Data: {}".format(kwargs.get('data_source')),
+            transform=ax.transAxes,
+            horizontalalignment='center',
+            verticalalignment='center', fontsize=12
+        )
+    ax2 = ax.twinx()
+    plt.colorbar(
+        pad=0.17
+    )
+
+    ax.axvline(
+        [y for y, x in enumerate(date_series) if "August 2017" in x],
+        color='white',
+        linestyle='dashed', linewidth=1)
+    plt.text(
+        list(date_series).index("August 2017"),
+        4000, 'July 2017 SegWit Activation',
+        horizontalalignment='right', color='white'
+    )
+
+    ax2.plot(
+        np.array([price_data.get(volume).get(x) for x in date_series])
+    )
+    ax2.set_ylabel(volume, fontsize=18)
+    ax2.set_yscale("log")
+    ax2.set_yticklabels(['{:,.0f}'.format(x) for x in ax2.get_yticks()])
+    plt.savefig('img/04_block_space_dist_{}.png'.format(type))
+
+    return plt.show()
