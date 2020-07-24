@@ -121,6 +121,37 @@ def two_axis_chart(df, x_series, y1_series, y2_series, **kwargs):
         type=kwargs.get('y2_series_axis_type', 'linear'), range=kwargs.get('y2_series_axis_range'),
         showgrid=False
     )
+
+    fig.add_trace(go.Scatter(
+        x=['2012-11-29', '2012-11-29'],
+        y=[0, 1000000],
+        mode="lines",
+        showlegend=False,
+        line=dict(width=2, color='white', dash="dot"),
+    ),
+        secondary_y=True
+    )
+
+    fig.add_trace(go.Scatter(
+        x=['2016-07-10', '2016-07-10'],
+        y=[0, 1000000],
+        mode="lines",
+        showlegend=False,
+        line=dict(width=2, color='white', dash="dot"),
+    ),
+        secondary_y=True
+    )
+
+    fig.add_trace(go.Scatter(
+        x=['2020-05-11', '2020-05-11'],
+        y=[0, 1000000],
+        mode="lines",
+        showlegend=False,
+        line=dict(width=2, color='white', dash="dot"),
+    ),
+        secondary_y=True
+    )
+
     import plotly
     plotly.offline.plot(fig, filename='MinerHerf.html')
     return fig.show()
