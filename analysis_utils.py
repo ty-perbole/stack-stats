@@ -1,7 +1,9 @@
 import datetime
 
-def get_extra_datetime_cols(df, datecol):
-    df['datetime'] = [datetime.datetime.strptime(x, "%Y-%m-%d") for x in df[datecol]]
+def get_extra_datetime_cols(df, datecol, date_format="%Y-%m-%d"):
+    df['datetime'] = [datetime.datetime.strptime(x, date_format) for x in df[datecol]]
+    if date_format != "%Y-%m-%d":
+        df['date'] = [x.strftime("%Y-%m-%d") for x in df['datetime']]
     df['year_string'] = [x.strftime('%Y') for x in df['datetime']]
     df['month_string'] = [x.strftime('%B %Y') for x in df['datetime']]
     df['week_string'] = [(x - datetime.timedelta(days=x.weekday())).strftime('%Y-%m-%d') for x in
