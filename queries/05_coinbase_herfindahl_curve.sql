@@ -28,11 +28,9 @@ coinbase_output AS (
    dates
  WHERE
    dates.date >= DATE(tx.block_timestamp)
-   AND DATE_DIFF(dates.date, DATE(tx.block_timestamp), DAY) BETWEEN 0 AND 365
+   AND DATE_DIFF(dates.date, DATE(tx.block_timestamp), DAY) BETWEEN 0 AND 28 * 2
    AND tx.is_coinbase
    AND outputs.value > 0
---    AND tx.block_number = 630000
-   AND block_timestamp_month >= '2020-01-01'
    ),
 
 tx AS (
@@ -56,8 +54,6 @@ tx AS (
  WHERE
    tx.hash IS NOT NULL
    AND outputs.index IS NOT NULL
-   AND block_timestamp_month >= '2020-01-01'
---    AND tx.block_number >= 630000
    ),
 
 coinbase_txo_flow AS (
@@ -109,34 +105,7 @@ coinbase_txo_flow AS (
      * IEEE_DIVIDE(tx4.input_value, tx4.tx_total_input_value)
      * IEEE_DIVIDE(tx3.input_value, tx3.tx_total_input_value)
      * IEEE_DIVIDE(tx2.input_value, tx2.tx_total_input_value)
-     * IEEE_DIVIDE(tx1.input_value, tx1.tx_total_input_value) AS tx4_output_value_adj,
-
-    tx5.block_number AS tx5_block_number,
-    tx5.block_timestamp AS tx5_block_ts,
-    tx5.current_tx_hash AS tx5_tx_hash,
-    tx5.output_index AS tx5_output_index,
-    tx5.output_value AS tx5_output_value,
-    tx5.input_value / tx5.tx_total_input_value AS tx5_scale_factor,
-    tx5.output_value
-      * IEEE_DIVIDE(tx5.input_value, tx5.tx_total_input_value)
-      * IEEE_DIVIDE(tx4.input_value, tx4.tx_total_input_value)
-      * IEEE_DIVIDE(tx3.input_value, tx3.tx_total_input_value)
-      * IEEE_DIVIDE(tx2.input_value, tx2.tx_total_input_value)
-      * IEEE_DIVIDE(tx1.input_value, tx1.tx_total_input_value) AS tx5_output_value_adj,
-
---    tx6.block_number AS tx6_block_number,
---    tx6.block_timestamp AS tx6_block_ts,
---    tx6.current_tx_hash AS tx6_tx_hash,
---    tx6.output_index AS tx6_output_index,
---    tx6.output_value AS tx6_output_value,
---    tx6.input_value / tx6.tx_total_input_value AS tx6_scale_factor,
---    tx6.output_value
---      * IEEE_DIVIDE(tx6.input_value, tx6.tx_total_input_value)
---      * IEEE_DIVIDE(tx5.input_value, tx5.tx_total_input_value)
---      * IEEE_DIVIDE(tx4.input_value, tx4.tx_total_input_value)
---      * IEEE_DIVIDE(tx3.input_value, tx3.tx_total_input_value)
---      * IEEE_DIVIDE(tx2.input_value, tx2.tx_total_input_value)
---      * IEEE_DIVIDE(tx1.input_value, tx1.tx_total_input_value) AS tx6_output_value_adj,
+     * IEEE_DIVIDE(tx1.input_value, tx1.tx_total_input_value) AS tx4_output_value_adj
 
  FROM
    coinbase_output
@@ -169,27 +138,11 @@ coinbase_txo_flow AS (
    AND tx3.output_index = tx4.input_spent_output_index
    AND coinbase_output.metric_date >= DATE(tx4.block_timestamp)
 
-  LEFT JOIN
-    tx AS tx5
-  ON
-    tx4.current_tx_hash = tx5.previous_tx_hash
-    AND tx4.output_index = tx5.input_spent_output_index
-    AND coinbase_output.metric_date >= DATE(tx5.block_timestamp)
-
---  LEFT JOIN
---    tx AS tx6
---  ON
---    tx5.current_tx_hash = tx6.previous_tx_hash
---    AND tx5.output_index = tx6.input_spent_output_index
---    AND coinbase_output.metric_date >= DATE(tx6.block_timestamp)
-
  WHERE
    IF(tx1.block_number IS NOT NULL, tx1.block_number >= coinbase_output.coinbase_block_number, True)
    AND IF(tx2.block_number IS NOT NULL, tx2.block_number >= tx1.block_number, True)
    AND IF(tx3.block_number IS NOT NULL, tx3.block_number >= tx2.block_number, True)
    AND IF(tx4.block_number IS NOT NULL, tx4.block_number >= tx3.block_number, True)
-    AND IF(tx5.block_number IS NOT NULL, tx5.block_number >= tx4.block_number, True)
---    AND IF(tx6.block_number IS NOT NULL, tx6.block_number >= tx5.block_number, True)
  ),
 
 txos AS (
@@ -200,22 +153,18 @@ SELECT
   coinbase_block_ts,
   coinbase_output_value,
   CASE
---     WHEN tx6_output_value IS NOT NULL THEN CONCAT(tx6_tx_hash, " ", tx6_output_index)
-     WHEN tx5_output_value IS NOT NULL THEN CONCAT(tx5_tx_hash, " ", tx5_output_index)
     WHEN tx4_output_value IS NOT NULL THEN CONCAT(tx4_tx_hash, " ", tx4_output_index)
     WHEN tx3_output_value IS NOT NULL THEN CONCAT(tx3_tx_hash, " ", tx3_output_index)
     WHEN tx2_output_value IS NOT NULL THEN CONCAT(tx2_tx_hash, " ", tx2_output_index)
     WHEN tx1_output_value IS NOT NULL THEN CONCAT(tx1_tx_hash, " ", tx1_output_index)
   ELSE CONCAT(coinbase_tx_hash, " ", coinbase_output_index) END AS row_source,
-  GREATEST(
-    CASE
---         WHEN tx6_output_value IS NOT NULL THEN tx6_output_value_adj
-         WHEN tx5_output_value IS NOT NULL THEN tx5_output_value_adj
-        WHEN tx4_output_value IS NOT NULL THEN tx4_output_value_adj
-        WHEN tx3_output_value IS NOT NULL THEN tx3_output_value_adj
-        WHEN tx2_output_value IS NOT NULL THEN tx2_output_value_adj
-        WHEN tx1_output_value IS NOT NULL THEN tx1_output_value_adj
-      ELSE coinbase_output_value END, 0.00000001) AS row_contribution
+  CASE
+    WHEN tx4_output_value IS NOT NULL THEN tx4_output_value_adj
+    WHEN tx3_output_value IS NOT NULL THEN tx3_output_value_adj
+    WHEN tx2_output_value IS NOT NULL THEN tx2_output_value_adj
+    WHEN tx1_output_value IS NOT NULL THEN tx1_output_value_adj
+  ELSE coinbase_output_value END
+      AS row_contribution
 FROM
   coinbase_txo_flow
   ),
@@ -265,13 +214,6 @@ GROUP BY
   days_since_coinbase)
 
 SELECT
-  DATE(DATETIME_TRUNC(coinbase_block_ts, WEEK)) AS week_date,
-  days_since_coinbase,
-  AVG(herfindal_index) AS herfindal_index
+  *
 FROM
   herf_block
-GROUP BY
-  week_date,
-  days_since_coinbase
-ORDER BY
-  week_date, days_since_coinbase ASC;

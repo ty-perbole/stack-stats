@@ -122,38 +122,40 @@ def two_axis_chart(df, x_series, y1_series, y2_series, **kwargs):
         showgrid=False
     )
 
-    fig.add_trace(go.Scatter(
-        x=['2012-11-29', '2012-11-29'],
-        y=[0, 1000000],
-        mode="lines",
-        showlegend=False,
-        line=dict(width=2, color='white', dash="dot"),
-    ),
-        secondary_y=True
-    )
+    if kwargs.get('halving_lines', False):
+        fig.add_trace(go.Scatter(
+            x=['2012-11-29', '2012-11-29'],
+            y=[0, 1000000],
+            mode="lines",
+            showlegend=False,
+            line=dict(width=2, color='white', dash="dot"),
+        ),
+            secondary_y=True
+        )
 
-    fig.add_trace(go.Scatter(
-        x=['2016-07-10', '2016-07-10'],
-        y=[0, 1000000],
-        mode="lines",
-        showlegend=False,
-        line=dict(width=2, color='white', dash="dot"),
-    ),
-        secondary_y=True
-    )
+        fig.add_trace(go.Scatter(
+            x=['2016-07-10', '2016-07-10'],
+            y=[0, 1000000],
+            mode="lines",
+            showlegend=False,
+            line=dict(width=2, color='white', dash="dot"),
+        ),
+            secondary_y=True
+        )
 
-    fig.add_trace(go.Scatter(
-        x=['2020-05-11', '2020-05-11'],
-        y=[0, 1000000],
-        mode="lines",
-        showlegend=False,
-        line=dict(width=2, color='white', dash="dot"),
-    ),
-        secondary_y=True
-    )
+        fig.add_trace(go.Scatter(
+            x=['2020-05-11', '2020-05-11'],
+            y=[0, 1000000],
+            mode="lines",
+            showlegend=False,
+            line=dict(width=2, color='white', dash="dot"),
+        ),
+            secondary_y=True
+        )
 
-    import plotly
-    plotly.offline.plot(fig, filename='MinerHerf.html')
+    if kwargs.get('save_file', None):
+        import plotly
+        plotly.offline.plot(fig, filename=kwargs.get('save_file'))
     return fig.show()
 
 def single_axis_chart(df, x_series, y1_series, **kwargs):
@@ -597,7 +599,7 @@ def block_space_price_heatmap(aggregate_data, date_series, price_data, type='sat
 
     return plt.show()
 
-def miner_herf_chart(df, **kwargs):
+def miner_herf_chart(df, pivot='month_string', **kwargs):
     """
         Plot a two axis chart using Plotly library
 
@@ -619,14 +621,14 @@ def miner_herf_chart(df, **kwargs):
         specs=[[{"secondary_y": False}]]
     )
 
-    curves = list(df['week_date'].unique())
+    curves = list(df[pivot].unique())
 
     if kwargs.get('y1_series_title'):
         y1_series_title = kwargs.get('y1_series_title')
 
     for curve in curves:
         # First trace
-        curve_df = df.loc[df['week_date'] == curve].reset_index(drop=True)
+        curve_df = df.loc[df[pivot] == curve].reset_index(drop=True)
         fig.add_trace(
             go.Scatter(x=curve_df['days_since_coinbase'], y=curve_df['herfindal_index'], name=curve),
             secondary_y=False
