@@ -122,6 +122,40 @@ def two_axis_chart(df, x_series, y1_series, y2_series, **kwargs):
         showgrid=False
     )
 
+    if kwargs.get('halving_lines', False):
+        fig.add_trace(go.Scatter(
+            x=['2012-11-29', '2012-11-29'],
+            y=[0, 1000000],
+            mode="lines",
+            showlegend=False,
+            line=dict(width=2, color='white', dash="dot"),
+        ),
+            secondary_y=True
+        )
+
+        fig.add_trace(go.Scatter(
+            x=['2016-07-10', '2016-07-10'],
+            y=[0, 1000000],
+            mode="lines",
+            showlegend=False,
+            line=dict(width=2, color='white', dash="dot"),
+        ),
+            secondary_y=True
+        )
+
+        fig.add_trace(go.Scatter(
+            x=['2020-05-11', '2020-05-11'],
+            y=[0, 1000000],
+            mode="lines",
+            showlegend=False,
+            line=dict(width=2, color='white', dash="dot"),
+        ),
+            secondary_y=True
+        )
+
+    if kwargs.get('save_file', None):
+        import plotly
+        plotly.offline.plot(fig, filename=kwargs.get('save_file'))
     return fig.show()
 
 def single_axis_chart(df, x_series, y1_series, **kwargs):
@@ -564,3 +598,69 @@ def block_space_price_heatmap(aggregate_data, date_series, price_data, type='sat
     plt.savefig('img/04_block_space_dist_{}.png'.format(type))
 
     return plt.show()
+
+def miner_herf_chart(df, pivot='month_string', **kwargs):
+    """
+        Plot a two axis chart using Plotly library
+
+        Arguments:
+        df (dataframe): Pandas dataframe containing CoinMetrics community data
+
+        Keyword arguments:
+        title (string): Title for the plot
+        x_axis_title (string): Title for X axis, defaults to string from x_series
+        y1_series_axis_type (string): Left Y axis type. Default is 'log'. Other sane option: 'linear'
+        y1_series_axis_range (list): Range for left Y axis. When axis type is log, range values represent powers of 10
+
+        Returns:
+            Plotly figure
+
+        """
+    # Create figure with secondary y-axis
+    fig = make_subplots(
+        specs=[[{"secondary_y": False}]]
+    )
+
+    curves = list(df[pivot].unique())
+
+    if kwargs.get('y1_series_title'):
+        y1_series_title = kwargs.get('y1_series_title')
+
+    for curve in curves:
+        # First trace
+        curve_df = df.loc[df[pivot] == curve].reset_index(drop=True)
+        fig.add_trace(
+            go.Scatter(x=curve_df['days_since_coinbase'], y=curve_df['herfindal_index'], name=curve),
+            secondary_y=False
+        )
+
+    # Add figure title
+    fig.update_layout(
+        title_text=kwargs.get('title', y1_series_title),
+    )
+
+    # Set x-axis title
+    if kwargs.get('x_axis_title'):
+        fig.update_xaxes(title_text=kwargs.get('x_axis_title'))
+
+    fig.update_layout(
+        annotations=[
+            dict(x=1, y=-0.1,
+                 text="Chart by: @typerbole; Data: {}".format(kwargs.get('data_source')) if kwargs.get('data_source') else "Chart by: @typerbole",
+                 showarrow=False, xref='paper', yref='paper',
+                 xanchor='right', yanchor='auto', xshift=0, yshift=0)
+        ],
+        showlegend=True,
+        legend_orientation="h",
+        template="plotly_dark"
+
+    )
+
+    # Set y-axes titles
+    fig.update_yaxes(
+        title_text=y1_series_title, secondary_y=False, tickformat=kwargs.get('y1_series_axis_format', None),
+        type=kwargs.get('y1_series_axis_type', 'linear'), range=kwargs.get('y1_series_axis_range', [0, 1]),
+        showgrid=False
+    )
+
+    return fig.show()
