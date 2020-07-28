@@ -110,7 +110,6 @@ coinbase_txo_flow AS (
  ON
    coinbase_output.coinbase_tx_hash = tx1.previous_tx_hash
    AND coinbase_output.coinbase_output_index = tx1.input_spent_output_index
-   AND DATE_DIFF(coinbase_output.coinbase_block_ts, DATE(tx1.block_timestamp), DAY) BETWEEN 0 AND 28 * 3
 
  LEFT JOIN
    tx AS tx2
