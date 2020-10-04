@@ -303,7 +303,7 @@ def create_highlighted_region_shapes(date_regions, fillcolor='LightSalmon'):
         )
     return shapes
 
-def hodl_waves_chart(df, version='value'):
+def hodl_waves_chart(df, version='value', save_file=None):
     """
             Plot a two axis chart using Plotly library
 
@@ -499,6 +499,11 @@ def hodl_waves_chart(df, version='value'):
 
     # Set x-axis title
     fig.update_xaxes(title_text='Date')
+
+    if save_file:
+        import plotly
+        plotly.offline.plot(fig, filename=save_file)
+    return fig.show()
 
     return fig.show()
 
