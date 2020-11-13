@@ -1,3 +1,6 @@
+CREATE TABLE IF NOT EXISTS
+`{project_name}.bitcoin.real_cap` AS
+
 WITH
 
 -- Outputs subquery: contains relevant information about a given output.
@@ -38,7 +41,7 @@ SELECT
   PriceUSD
 FROM
 -- ** YOU WILL HAVE TO REPLACE THE PROJECT NAME HERE TO REFLECT YOUR OWN BIGQUERY TABLE **
-  `replace_this_project.bitcoin.cm_btc`),
+  `{project_name}.bitcoin.cm_btc`),
 
 -- txo subquery: joins outputs to inputs so that we know when/if a TXO is spent.
 -- NEW: we also join the price data and calculate the cost basis of each TXO

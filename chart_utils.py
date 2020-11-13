@@ -237,7 +237,7 @@ def single_axis_chart(df, x_series, y1_series, **kwargs):
 
     fig.update_layout(
         annotations=[
-            dict(x=1, y=-0.1,
+            dict(x=1, y=1.1,
                  text="Chart by: @typerbole; Data: {}".format(kwargs.get('data_source')) if kwargs.get('data_source') else "Chart by: @typerbole",
                  showarrow=False, xref='paper', yref='paper',
                  xanchor='right', yanchor='auto', xshift=0, yshift=0)
