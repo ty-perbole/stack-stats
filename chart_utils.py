@@ -123,35 +123,48 @@ def two_axis_chart(df, x_series, y1_series, y2_series, **kwargs):
     )
 
     if kwargs.get('halving_lines', False):
-        fig.add_trace(go.Scatter(
-            x=['2012-11-29', '2012-11-29'],
-            y=[0, 1000000],
-            mode="lines",
-            showlegend=False,
-            line=dict(width=2, color='white', dash="dot"),
-        ),
-            secondary_y=True
-        )
+        min_date, max_date = df[x_series].min(), df[x_series].max()
+        for halving_date in ['2012-11-29', '2016-07-10', '2020-05-11']:
+            if min_date <= halving_date <= max_date:
+                fig.add_trace(go.Scatter(
+                    x=[halving_date, halving_date],
+                    y=[0, 1000000],
+                    mode="lines",
+                    showlegend=False,
+                    line=dict(width=2, color='white', dash="dot"),
+                    name='{} Halving'.format(halving_date)
+                ), secondary_y=True)
 
-        fig.add_trace(go.Scatter(
-            x=['2016-07-10', '2016-07-10'],
-            y=[0, 1000000],
-            mode="lines",
-            showlegend=False,
-            line=dict(width=2, color='white', dash="dot"),
-        ),
-            secondary_y=True
-        )
-
-        fig.add_trace(go.Scatter(
-            x=['2020-05-11', '2020-05-11'],
-            y=[0, 1000000],
-            mode="lines",
-            showlegend=False,
-            line=dict(width=2, color='white', dash="dot"),
-        ),
-            secondary_y=True
-        )
+    # if kwargs.get('halving_lines', False):
+    #     fig.add_trace(go.Scatter(
+    #         x=['2012-11-29', '2012-11-29'],
+    #         y=[0, 1000000],
+    #         mode="lines",
+    #         showlegend=False,
+    #         line=dict(width=2, color='white', dash="dot"),
+    #     ),
+    #         secondary_y=True
+    #     )
+    #
+    #     fig.add_trace(go.Scatter(
+    #         x=['2016-07-10', '2016-07-10'],
+    #         y=[0, 1000000],
+    #         mode="lines",
+    #         showlegend=False,
+    #         line=dict(width=2, color='white', dash="dot"),
+    #     ),
+    #         secondary_y=True
+    #     )
+    #
+    #     fig.add_trace(go.Scatter(
+    #         x=['2020-05-11', '2020-05-11'],
+    #         y=[0, 1000000],
+    #         mode="lines",
+    #         showlegend=False,
+    #         line=dict(width=2, color='white', dash="dot"),
+    #     ),
+    #         secondary_y=True
+    #     )
 
     if kwargs.get('save_file', None):
         import plotly
