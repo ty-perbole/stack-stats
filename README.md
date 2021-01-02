@@ -43,3 +43,4 @@ So if you want to see the visualizations without running the notebook locally, u
 - [RealCap Weighted HODL Waves Chart](https://ty-perbole.github.io/stack-stats/RealCapHODLWaves.html)
 - [Bitcoin Security Margin Analysis](https://ty-perbole.github.io/stack-stats/SecurityMargin.html)
 - [Coinbase Output Herfindahl Index](https://ty-perbole.github.io/stack-stats/MinerHerfMultiple.html)
+- [Cycle Comparisons Notebook](https://ty-perbole.github.io/stack-stats/CompareCycles.html)
