@@ -270,6 +270,117 @@ def single_axis_chart(df, x_series, y1_series, **kwargs):
 
     return fig.show()
 
+def single_axis_chart2(df, x_series, y_series, **kwargs):
+    fig = make_subplots(
+        specs=[[{"secondary_y": False}]]
+    )
+
+    if kwargs.get('bars', False):
+        fig.add_bar(
+            x=df[x_series], y=df[y_series], name=y_series, marker_color=kwargs.get('marker_color', 'rgb(242, 169, 0)'),
+            text=["{:.2%} Δ".format(x) if np.isfinite(x) else '' for x in df[y_series].pct_change()],
+            textposition='auto',
+        )
+    else:
+        if isinstance(y_series, str):
+            fig.add_trace(
+                go.Scatter(x=df[x_series], y=df[y_series], name=y_series, marker_color=kwargs.get('marker_color', 'rgb(242, 169, 0)')),
+                secondary_y=False
+            )
+            if kwargs.get('confidence_interals', False):
+                fig.add_trace(
+                    go.Scatter(
+                        x=df[x_series],
+                        y=df[kwargs.get('confidence_interals', False)[2]],
+                        line=dict(color='lightblue'),
+                        mode='lines',
+                        name='7 Day Moving Average'
+                    )
+                ),
+                fig.add_trace(
+                    go.Scatter(
+                        name='Upper Bound',
+                        x=df[x_series],
+                        y=df[kwargs.get('confidence_interals', False)[1]],
+                        mode='lines',
+                        marker=dict(color="#444"),
+                        line=dict(width=0),
+                        showlegend=False
+                    )
+                ),
+                fig.add_trace(
+                        go.Scatter(
+                        name='Lower Bound',
+                        x=df[x_series],
+                        y=df[kwargs.get('confidence_interals', False)[0]],
+                        marker=dict(color="#444"),
+                        line=dict(width=0),
+                        mode='lines',
+                        fillcolor='rgba(190, 190, 190, 0.3)',
+                        fill='tonexty',
+                        showlegend=False
+                    )
+                )
+        elif isinstance(y_series, list):
+            for y1 in y_series:
+                # First trace
+                fig.add_trace(
+                    go.Scatter(x=df[x_series], y=df[y1], name=y1),
+                    secondary_y=False
+                )
+
+    # Add figure title
+    fig.update_layout(
+        title_text=kwargs.get('title', kwargs.get('y_series_title', y_series)),
+    )
+
+    # Set x-axis title
+    if kwargs.get('x_axis_title'):
+        fig.update_xaxes(title_text=kwargs.get('x_axis_title'))
+
+    fig.update_layout(
+        annotations=[
+            dict(x=1, y=-0.2,
+                 text="Data: {}".format(kwargs.get('data_source', 'CoinMetrics')),
+                 showarrow=False, xref='paper', yref='paper',
+                 xanchor='right', yanchor='auto', xshift=0, yshift=0)
+        ],
+        showlegend=False,
+        legend_orientation="h",
+        template="plotly_dark",
+        hovermode='x unified',
+        xaxis_showgrid=False,
+        yaxis_showgrid=False
+    )
+
+    # Set y-axes titles
+    fig.update_yaxes(
+        title_text=kwargs.get('y_series_title', y_series), secondary_y=False, tickformat=kwargs.get('y_series_axis_format', None),
+        type=kwargs.get('y_series_axis_type', 'linear'), range=kwargs.get('y_series_axis_range'),
+        showgrid=False
+    )
+
+    if kwargs.get('halving_lines', False):
+        min_date, max_date = df[x_series].min(), df[x_series].max()
+        for halving_date in ['2012-11-29', '2016-07-10', '2020-05-11']:
+            try:
+                if min_date <= halving_date <= max_date:
+                    axis_min = 0 if kwargs.get('y_series_axis_type', 'linear') == 'linear' else df[y_series].min()
+                    fig.add_trace(go.Scatter(
+                        x=[halving_date, halving_date],
+                        y=[axis_min, df[y_series].max()],
+                        mode="lines",
+                        showlegend=False,
+                        line=dict(width=2, color='white', dash="dot"),
+                        name='{} Halving'.format(halving_date)
+                    ),
+                        secondary_y=False
+                    )
+            except TypeError:
+                pass
+
+    return fig
+
 
 def get_threshold_dates(df, x_series, y_series, thresh, upper_bound=True):
     ''' Get a list of date regions that are above or below a certain threshold '''
