@@ -341,7 +341,7 @@ def single_axis_chart2(df, x_series, y_series, **kwargs):
     fig.update_layout(
         annotations=[
             dict(x=1, y=-0.2,
-                 text="Data: {}".format(kwargs.get('data_source', 'CoinMetrics')),
+                 text="Chart by @typerbole. Data: {}".format(kwargs.get('data_source', 'CoinMetrics')),
                  showarrow=False, xref='paper', yref='paper',
                  xanchor='right', yanchor='auto', xshift=0, yshift=0)
         ],
